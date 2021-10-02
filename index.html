@@ -1,0 +1,112 @@
+<html>
+  <head>
+    <title>WGSL sandbox</title>
+    <style>
+      body {
+        position: absolute;
+        margin: 0;
+        overflow: hidden;
+        background: #000;
+        color: #fff;
+      }
+
+      #info {
+        opacity: 0.8;
+      }
+
+      #shaderTextarea {
+        position: absolute;
+        width: 98%;
+        height: 90vh;
+        margin: 5% 1% 1% 1%;
+        background: #000;
+        color: #fff;
+      }
+
+      #runButton {
+        position: absolute;
+        margin: 5px 0 0 5px;
+      }
+
+      #sourceLink {
+        position: absolute;
+        margin: 5px 0 0 100px;
+        background: #000;
+        color: #fff;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="info">
+      <button id="runButton">Run</button>
+      <a id="sourceLink" href="https://github.com/takahirox/wgsl-sandbox" target="_blank">GitHub</a>
+      <textarea id="shaderTextarea"></textarea>
+    </div>
+    <script id="defaultShader" type="wgsl">
+struct VertexOutput {
+  [[builtin(position)]] position: vec4<f32>;
+  [[location(1)]] normal: vec3<f32>;
+  [[location(2)]] uv: vec2<f32>;
+};
+
+[[block]]
+struct Object {
+  model_view_matrix: mat4x4<f32>;
+  normal_matrix: mat3x3<f32>;
+};
+
+[[block]]
+struct Camera {
+  projection_matrix: mat4x4<f32>;
+};
+
+[[block]]
+struct Time {
+  elapsed: f32; // in seconds
+};
+
+[[group(0), binding(0)]]
+var<uniform> object: Object;
+
+[[group(0), binding(1)]]
+var<uniform> camera: Camera;
+
+[[group(0), binding(2)]]
+var<uniform> time: Time;
+
+[[stage(vertex)]]
+fn vs_main(
+  [[location(0)]] position: vec3<f32>,
+  [[location(1)]] normal: vec3<f32>,
+  [[location(2)]] uv: vec2<f32>,
+) -> VertexOutput {
+  var out: VertexOutput;
+  out.position = camera.projection_matrix * object.model_view_matrix * vec4<f32>(position, 1.0);
+  out.normal = normalize(object.normal_matrix * normal);
+  out.uv = uv;
+  return out;
+}
+
+[[stage(fragment)]]
+fn fs_main(in: VertexOutput) -> [[location(0)]] vec4<f32> {
+  return vec4<f32>(in.uv, pow(cos(time.elapsed), 2.0), 1.0);
+}
+    </script>
+    <script type="module">
+      import App from './src/index.js';
+
+      const run = async () => {
+        let app;
+        try {
+          app = await App.create();
+        } catch (error) {
+          window.alert(error);
+          throw error;
+        }
+        app.start();
+      };
+
+      run();
+    </script>
+  </body>
+</html>
