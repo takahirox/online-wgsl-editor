@@ -23,14 +23,12 @@
         color: #fff;
       }
 
-      #runButton {
+      #controls {
         position: absolute;
         margin: 5px 0 0 5px;
       }
 
       #sourceLink {
-        position: absolute;
-        margin: 5px 0 0 100px;
         background: #000;
         color: #fff;
       }
@@ -38,9 +36,11 @@
   </head>
   <body>
     <div id="info">
-      <button id="runButton">Run</button>
-      <a id="sourceLink" href="https://github.com/takahirox/wgsl-sandbox" target="_blank">GitHub</a>
-      <textarea id="shaderTextarea"></textarea>
+      <div id="controls">
+        <button id="runButton">Run</button>
+        <a id="sourceLink" href="https://github.com/takahirox/wgsl-sandbox" target="_blank">GitHub</a>
+      </div>
+      <textarea id="shaderTextarea" spellcheck="false"></textarea>
     </div>
     <script id="defaultShader" type="wgsl">
 struct VertexOutput {
