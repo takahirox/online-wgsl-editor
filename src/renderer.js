@@ -88,10 +88,13 @@ export default class WGPURenderer {
       // @TODO: Error handling
       return;
     }
-    this._renderPipelines.update(this._device, material);
+    this._bindings.update(this._device, material);
+    const binding = this._bindings.get(material);
+    this._renderPipelines.update(this._device, material, binding.layout);
     const module = this._renderPipelines.get(material).module;
     const log = await module.getLog();
     if (log.messages.length > 0) {
+      this._bindings.remove(material);
       this._renderPipelines.remove(material);
       throw new Error('Compile error');
     }
@@ -131,13 +134,15 @@ export default class WGPURenderer {
       }
 
       const material = mesh.material;
-      this._renderPipelines.update(this._device, material);
+
+      this._bindings.update(this._device, material);
+      this._bindings.upload(this._device, material, node, scene, cameraNode, camera);
+      const binding = this._bindings.get(material);
+      pass.setBindGroup(0, binding.group);
+
+      this._renderPipelines.update(this._device, material, binding.layout);
       const pipeline = this._renderPipelines.get(material).pipeline.pipeline;
       pass.setPipeline(pipeline);
-
-      this._bindings.update(this._device, pipeline, node, scene, cameraNode, camera);
-      const binding = this._bindings.get(pipeline);
-      pass.setBindGroup(0, binding.group);
 
       const geometry = mesh.geometry;
 
@@ -223,7 +228,7 @@ class WGPUShaderModule {
 }
 
 class WGPURenderPipeline {
-  constructor(device, shaderModule) {
+  constructor(device, shaderModule, bindGroupLayout) {
     this.pipeline = device.createRenderPipeline({
       depthStencil: {
         depthWriteEnabled: true,
@@ -237,6 +242,9 @@ class WGPURenderPipeline {
           format: 'bgra8unorm'
         }]
       },
+      layout: device.createPipelineLayout({
+        bindGroupLayouts: [bindGroupLayout]
+      }),
       multisample: {
         count: 1
       },
@@ -294,7 +302,7 @@ class WGPURenderPipelines {
   }
 
   // @TODO: Dispose unused pipelines
-  update(device, material) {
+  update(device, material, bindGroupLayout) {
     if (!(material instanceof ShaderMaterial)) {
       return;
     }
@@ -304,7 +312,7 @@ class WGPURenderPipelines {
     const module = new WGPUShaderModule(device, material.shaderCode);
     this._pipelines.set(material, {
       module: module,
-      pipeline: new WGPURenderPipeline(device, module.module),
+      pipeline: new WGPURenderPipeline(device, module.module, bindGroupLayout),
     });
   }
 
@@ -369,67 +377,74 @@ class WGPUBindings {
     this._bindings = new WeakMap();
   }
 
-  get(pipeline) {
-    return this._bindings.get(pipeline);
+  get(material) {
+    return this._bindings.get(material);
   }
 
   // @TODO: Dispose unused groups
-  update(device, pipeline, node, scene, cameraNode, camera) {
-    if (!this._bindings.has(pipeline)) {
-      const layout = pipeline.getBindGroupLayout(0);
-      const buffers = [
-        // model-view matrix, normal matrix
-        createAndInitBuffer(
-          device,
-          new Float32Array(16 + 12),
-          GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
-        ),
-        // projection matrix
-        createAndInitBuffer(
-          device,
-          new Float32Array(16),
-          GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
-        ),
-        // elapsed time
-        createAndInitBuffer(
-          device,
-          new Float32Array(1),
-          GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
-        )
-      ];
-      const group = device.createBindGroup({
-        entries: [
-          // model-view matrix, normal matrix
-          {
-            binding: 0,
-            resource: {
-              buffer: buffers[0]
-            }
-          },
-          // projection matrix
-          {
-            binding: 1,
-            resource: {
-              buffer: buffers[1]
-            }
-          },
-          // elapsed time
-          {
-            binding: 2,
-            resource: {
-              buffer: buffers[2]
-            }
-          }
-        ],
-        layout: layout
-      });
-      this._bindings.set(pipeline, {
-        buffers: buffers,
-        layout: layout,
-        group: group
-      });
+  update(device, material, node, scene, cameraNode, camera) {
+    if (this._bindings.has(material)) {
+      return;
     }
+    const layout = this._createLayout(device);
+    const buffers = [
+      // model-view matrix, normal matrix
+      createAndInitBuffer(
+        device,
+        new Float32Array(16 + 12),
+        GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+      ),
+      // projection matrix
+      createAndInitBuffer(
+        device,
+        new Float32Array(16),
+        GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+      ),
+      // elapsed time
+      createAndInitBuffer(
+        device,
+        new Float32Array(1),
+        GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+      )
+    ];
+    const group = device.createBindGroup({
+      entries: [
+        // model-view matrix, normal matrix
+        {
+          binding: 0,
+          resource: {
+            buffer: buffers[0]
+          }
+        },
+        // projection matrix
+        {
+          binding: 1,
+          resource: {
+            buffer: buffers[1]
+          }
+        },
+        // elapsed time
+        {
+          binding: 2,
+          resource: {
+            buffer: buffers[2]
+          }
+        }
+      ],
+      layout: layout
+    });
+    this._bindings.set(material, {
+      buffers: buffers,
+      layout: layout,
+      group: group
+    });
+  }
 
+  remove(material) {
+    this._bindings.delete(material);
+  }
+
+  upload(device, material, node, scene, cameraNode, camera) {
     Matrix4.copy(_cameraMatrixInverse, cameraNode.getMatrix());
     Matrix4.invert(_cameraMatrixInverse);
     Matrix4.copy(_modelViewMatrix, _cameraMatrixInverse, node.getMatrix());
@@ -438,11 +453,48 @@ class WGPUBindings {
     // in seconds
     _elapsedTime[0] = scene.elapsedTime * 0.001;
 
-    const binding = this._bindings.get(pipeline);
+    const binding = this._bindings.get(material);
     device.queue.writeBuffer(binding.buffers[0], 0, _modelViewMatrix, 0);
     device.queue.writeBuffer(binding.buffers[0], 64, _normalMatrixGPU, 0);
     device.queue.writeBuffer(binding.buffers[1], 0, camera.projectionMatrix, 0);
     device.queue.writeBuffer(binding.buffers[2], 0, _elapsedTime, 0);
+  }
+
+  _createLayout(device) {
+    return device.createBindGroupLayout({
+      entries: [
+        // model-view matrix, normal matrix
+        {
+          binding: 0,
+          buffer: {
+            type: 'uniform',
+            hasDynamicOffset: false,
+            minBindingSize: 64 + 48
+          },
+          visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT
+        },
+        // projection matrix
+        {
+          binding: 1,
+          buffer: {
+            type: 'uniform',
+            hasDynamicOffset: false,
+            minBindingSize: 64
+          },
+          visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT
+        },
+        // elapsed time
+        {
+          binding: 2,
+          buffer: {
+            type: 'uniform',
+            hasDynamicOffset: false,
+            minBindingSize: 4
+          },
+          visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT
+        }
+      ]
+    });
   }
 }
 
