@@ -25,22 +25,57 @@
 
       #controls {
         position: absolute;
-        margin: 5px 0 0 5px;
+        margin: 10px 0 0 5px;
+        width: 90%;
+      }
+
+      #statusSpan {
+        background: #fff;
+        padding: 5px;
+      }
+
+      #compiledStatus {
+        color: #0f0;
+      }
+
+      #errorStatus {
+        color: #f00;
       }
 
       #sourceLink {
+        position: absolute;
+        top: 5px;
+        right: 10px;
+        padding: 5px;
         background: #000;
         color: #fff;
+      }
+
+      .textarea {
+        -moz-appearance: textfield-multiline;
+        -webkit-appearance: textarea;
+        border: 1px solid gray;
+        font: medium -moz-fixed;
+        font: -webkit-small-control;
+        height: 28px;
+        overflow: auto;
+        padding: 2px;
+        resize: both;
+        white-space: pre;
       }
     </style>
   </head>
   <body>
     <div id="info">
       <div id="controls">
-        <button id="runButton">Run</button>
-        <a id="sourceLink" href="https://github.com/takahirox/wgsl-sandbox" target="_blank">GitHub</a>
+        <button id="compileButton">Compile</button>
+        <span id="statusSpan">
+          <span id="compiledStatus" style="display: none;">Compiled</span>
+          <span id="errorStatus" style="display: none;">Error</span>
+        </span>
       </div>
-      <textarea id="shaderTextarea" spellcheck="false"></textarea>
+      <a id="sourceLink" href="https://github.com/takahirox/wgsl-sandbox" target="_blank">GitHub</a>
+      <div class="textarea" id="shaderTextarea" contentEditable="true" spellcheck="false"></div>
     </div>
     <script id="defaultShader" type="wgsl">
 struct VertexOutput {

@@ -14,8 +14,10 @@ import {
 
 const DOM_ELEMENTS_ID = {
   defaultShader: 'defaultShader',
+  compileButton: 'compileButton',
+  compiledStatus: 'compiledStatus',
+  errorStatus: 'errorStatus',
   info: 'info',
-  runButton: 'runButton',
   shaderTextarea: 'shaderTextarea'
 };
 
@@ -82,7 +84,7 @@ export default class App {
 
   _setupDomElements() {
     const area = document.getElementById(DOM_ELEMENTS_ID.shaderTextarea);
-    area.value = document.getElementById(DOM_ELEMENTS_ID.defaultShader).innerText.trim();
+    area.innerText = document.getElementById(DOM_ELEMENTS_ID.defaultShader).innerText.trim();
 
     const info = document.getElementById(DOM_ELEMENTS_ID.info);
     document.addEventListener('mouseenter', e => {
@@ -92,7 +94,7 @@ export default class App {
       info.style.opacity = 0.0;
     });
 
-    const button = document.getElementById(DOM_ELEMENTS_ID.runButton);
+    const button = document.getElementById(DOM_ELEMENTS_ID.compileButton);
     button.addEventListener('click', _ => {
       this._updateShader();
     });
@@ -108,18 +110,75 @@ export default class App {
   }
 
   async _updateShader() {
-    const shaderCode = document.getElementById(DOM_ELEMENTS_ID.shaderTextarea).value;
+    this._cleanupHighlights();
+
+    const shaderCode = document.getElementById(DOM_ELEMENTS_ID.shaderTextarea).innerText;
     const material = new ShaderMaterial(shaderCode);
 
     try {
       await this.renderer.compile(material);
     } catch (error) {
-      // @TODO: Improve error handling
-      window.alert(error + ' Watch the console.');
+      this._updateStatusElement(false);
+      this._highlightCompileErrors(error.messages);
       throw error;
     }
 
+    this._updateStatusElement(true);
     this.meshNode.object.material = material;
+  }
+
+  _updateStatusElement(succeeded) {
+    document.getElementById(DOM_ELEMENTS_ID.compiledStatus).style.display = succeeded ? '' : 'none';
+    document.getElementById(DOM_ELEMENTS_ID.errorStatus).style.display = !succeeded ? '' : 'none';
+  }
+
+  _highlightCompileErrors(messages) {
+    const area = document.getElementById(DOM_ELEMENTS_ID.shaderTextarea);
+    // Assuming messages are position order
+    messages.forEach(message => {
+      const offset = this._findOffsetInShaderTextArea(message.lineNum);
+      const range = document.createRange();
+      range.setStart(area, offset);
+      range.setEnd(area, offset + 1);
+      const child = area.childNodes[offset];
+      // Checking the node type just in case.
+      const chunk = child.nodeType === window.Node.TEXT_NODE
+        // I don't know why but -1 seems to be needed
+        ? child.textContent.slice(message.linePos - 1, message.linePos + message.length - 1)
+        : '';
+      const mark = document.createElement('mark');
+      mark.title = `${message.lineNum}:${message.linePos} ${message.message}, "${chunk}"`;
+      range.surroundContents(mark);
+    });
+  }
+
+  _cleanupHighlights() {
+    const area = document.getElementById(DOM_ELEMENTS_ID.shaderTextarea);
+    area.childNodes.forEach(child => {
+      if (child.tagName && child.tagName.toLowerCase() === 'mark') {
+        child.parentNode.insertBefore(child.childNodes[0], child);
+        child.parentNode.removeChild(child);
+      }
+    });
+  }
+
+  _findOffsetInShaderTextArea(lineNum) {
+    const area = document.getElementById(DOM_ELEMENTS_ID.shaderTextarea);
+    if (lineNum === 1) {
+      return 0;
+    }
+    let currentLineNum = 1;
+    for (let i = 0; i < area.childNodes.length; i++) {
+      const child = area.childNodes[i];
+      if (child.tagName && child.tagName.toLowerCase() === 'br') {
+        currentLineNum++;
+      }
+      if (lineNum === currentLineNum) {
+        return i + 1;
+      }
+    }
+    // @TODO: Error handling?
+    return -1;
   }
 
   _animate() {
