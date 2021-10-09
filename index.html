@@ -85,29 +85,16 @@ struct VertexOutput {
 };
 
 [[block]]
-struct Object {
-  model_view_matrix: mat4x4<f32>;
-  normal_matrix: mat3x3<f32>;
-};
-
-[[block]]
-struct Camera {
+struct Uniform {
+  model_matrix: mat4x4<f32>;
+  view_matrix: mat4x4<f32>;
   projection_matrix: mat4x4<f32>;
-};
-
-[[block]]
-struct Time {
-  elapsed: f32; // in seconds
+  normal_matrix: mat3x3<f32>;
+  elapsedTime: f32; // in seconds
 };
 
 [[group(0), binding(0)]]
-var<uniform> object: Object;
-
-[[group(0), binding(1)]]
-var<uniform> camera: Camera;
-
-[[group(0), binding(2)]]
-var<uniform> time: Time;
+var<uniform> unif: Uniform;
 
 [[stage(vertex)]]
 fn vs_main(
@@ -116,15 +103,15 @@ fn vs_main(
   [[location(2)]] uv: vec2<f32>,
 ) -> VertexOutput {
   var out: VertexOutput;
-  out.position = camera.projection_matrix * object.model_view_matrix * vec4<f32>(position, 1.0);
-  out.normal = normalize(object.normal_matrix * normal);
+  out.position = unif.projection_matrix * unif.view_matrix * unif.model_matrix * vec4<f32>(position, 1.0);
+  out.normal = normalize(unif.normal_matrix * normal);
   out.uv = uv;
   return out;
 }
 
 [[stage(fragment)]]
 fn fs_main(in: VertexOutput) -> [[location(0)]] vec4<f32> {
-  return vec4<f32>(in.uv, pow(cos(time.elapsed), 2.0), 1.0);
+  return vec4<f32>(in.uv, pow(cos(unif.elapsedTime), 2.0), 1.0);
 }
     </script>
     <script type="module">

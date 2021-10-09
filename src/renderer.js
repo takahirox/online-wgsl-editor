@@ -372,10 +372,10 @@ class WGPUIndices {
   }
 }
 
-const _normalMatrix = Matrix3.create();
-const _normalMatrixGPU = Matrix3GPU.create();
 const _modelViewMatrix = Matrix4.create();
 const _cameraMatrixInverse = Matrix4.create();
+const _normalMatrix = Matrix3.create();
+const _normalMatrixGPU = Matrix3GPU.create();
 const _elapsedTime = new Float32Array(1);
 
 // @TODO: Implement correctly
@@ -394,54 +394,28 @@ class WGPUBindings {
       return;
     }
     const layout = this._createLayout(device);
-    const buffers = [
-      // model-view matrix, normal matrix
-      createAndInitBuffer(
-        device,
-        new Float32Array(16 + 12),
-        GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
-      ),
-      // projection matrix
-      createAndInitBuffer(
-        device,
-        new Float32Array(16),
-        GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
-      ),
-      // elapsed time
-      createAndInitBuffer(
-        device,
-        new Float32Array(1),
-        GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
-      )
-    ];
+    // model matrix mat4x4
+    // view matrix mat4x4
+    // projection matrix mat4x4
+    // elapsed time float
+    const buffer = createAndInitBuffer(
+      device,
+      new Float32Array(16 + 16 + 16 + 12 + 1),
+      GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+    );
     const group = device.createBindGroup({
       entries: [
-        // model-view matrix, normal matrix
         {
           binding: 0,
           resource: {
-            buffer: buffers[0]
-          }
-        },
-        // projection matrix
-        {
-          binding: 1,
-          resource: {
-            buffer: buffers[1]
-          }
-        },
-        // elapsed time
-        {
-          binding: 2,
-          resource: {
-            buffer: buffers[2]
+            buffer: buffer
           }
         }
       ],
       layout: layout
     });
     this._bindings.set(material, {
-      buffers: buffers,
+      buffer: buffer,
       layout: layout,
       group: group
     });
@@ -460,43 +434,33 @@ class WGPUBindings {
     // in seconds
     _elapsedTime[0] = scene.elapsedTime * 0.001;
 
+    // model matrix mat4x4
+    // view matrix mat4x4
+    // projection matrix mat4x4
+    // normal matrix mat3x3
+    // elapsed time float
     const binding = this._bindings.get(material);
-    device.queue.writeBuffer(binding.buffers[0], 0, _modelViewMatrix, 0);
-    device.queue.writeBuffer(binding.buffers[0], 64, _normalMatrixGPU, 0);
-    device.queue.writeBuffer(binding.buffers[1], 0, camera.projectionMatrix, 0);
-    device.queue.writeBuffer(binding.buffers[2], 0, _elapsedTime, 0);
+    device.queue.writeBuffer(binding.buffer, 0, node.getMatrix(), 0);
+    device.queue.writeBuffer(binding.buffer, 64, _cameraMatrixInverse, 0);
+    device.queue.writeBuffer(binding.buffer, 128, camera.projectionMatrix, 0);
+    device.queue.writeBuffer(binding.buffer, 192, _normalMatrixGPU, 0);
+    device.queue.writeBuffer(binding.buffer, 240, _elapsedTime, 0);
   }
 
   _createLayout(device) {
     return device.createBindGroupLayout({
       entries: [
-        // model-view matrix, normal matrix
+        // model matrix mat4x4
+        // view matrix mat4x4
+        // projection matrix mat4x4
+        // normal matrix mat3x3
+        // elapsed time float
         {
           binding: 0,
           buffer: {
             type: 'uniform',
             hasDynamicOffset: false,
-            minBindingSize: 64 + 48
-          },
-          visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT
-        },
-        // projection matrix
-        {
-          binding: 1,
-          buffer: {
-            type: 'uniform',
-            hasDynamicOffset: false,
-            minBindingSize: 64
-          },
-          visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT
-        },
-        // elapsed time
-        {
-          binding: 2,
-          buffer: {
-            type: 'uniform',
-            hasDynamicOffset: false,
-            minBindingSize: 4
+            minBindingSize: (16 + 16 + 16 + 12 + 1) * 4,
           },
           visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT
         }
