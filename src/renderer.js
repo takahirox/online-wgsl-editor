@@ -18,6 +18,13 @@ const DEFAULT_PIXEL_RATIO = 1.0;
 
 const ATTRIBUTE_NAMES = ['position', 'normal', 'uv'];
 
+class CompileError extends Error {
+  constructor(messages, ...params) {
+    super(...params);
+    this.messages = messages;
+  }
+}
+
 export default class WGPURenderer {
   constructor(adapter, device, context) {
     this._adapter = adapter;
@@ -96,7 +103,7 @@ export default class WGPURenderer {
     if (log.messages.length > 0) {
       this._bindings.remove(material);
       this._renderPipelines.remove(material);
-      throw new Error('Compile error');
+      throw new CompileError(log.messages.slice(), 'Compile error');
     }
   }
 
