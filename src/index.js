@@ -48,7 +48,7 @@ export default class App {
     const context = canvas.getContext('webgpu');
 
     if (!context) {
-      throw new Error('Your browser does not seem to support WebGPU API');
+      throw new UnsupportedWebGPUError('Your browser does not seem to support WebGPU API');
     }
 
     canvas.width = window.innerWidth;
@@ -187,5 +187,11 @@ export default class App {
 
   _render() {
     this.renderer.render(this.sceneNode, this.cameraNode);
+  }
+}
+
+export class UnsupportedWebGPUError extends Error {
+  constructor(...params) {
+    super(...params);
   }
 }

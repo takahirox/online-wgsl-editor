@@ -115,14 +115,16 @@ fn fs_main(in: VertexOutput) -> [[location(0)]] vec4<f32> {
 }
     </script>
     <script type="module">
-      import App from './src/index.js';
+      import App, {UnsupportedWebGPUError} from './src/index.js';
 
       const run = async () => {
         let app;
         try {
           app = await App.create();
         } catch (error) {
-          window.alert(error);
+          if (error instanceof UnsupportedWebGPUError) {
+            window.alert(error);
+          }
           throw error;
         }
         app.start();
