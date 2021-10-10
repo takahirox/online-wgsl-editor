@@ -238,6 +238,7 @@ class WGPURenderPipeline {
   constructor(device, shaderModule, bindGroupLayout) {
     this.pipeline = device.createRenderPipeline({
       depthStencil: {
+        depthCompare: 'less-equal',
         depthWriteEnabled: true,
         format: 'depth24plus-stencil8'
       },

@@ -21,6 +21,12 @@ export class Node {
 
   add(child) {
     this.children.push(child);
+    return this;
+  }
+
+  setObject(object) {
+    this.object = object;
+    return this;
   }
 
   getMatrix() {
@@ -51,9 +57,9 @@ export class Scene {
 }
 
 export class PerspectiveCamera {
-  constructor(aspect, fovy, far, near) {
-    this.aspect = aspect;
+  constructor(fovy = 1.0, aspect = 1.0, far = 1000.0, near = 0.001) {
     this.fovy = fovy;
+    this.aspect = aspect;
     this.far = far;
     this.near = near;
     this.projectionMatrix = Matrix4.create();

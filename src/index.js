@@ -1,44 +1,67 @@
 import {Material, ShaderMaterial} from './material.js';
-import {Color, Vector3} from './math.js';
+import {Color, Euler, Vector3} from './math.js';
 import WGPURenderer from './renderer.js';
 import {
   Node,
   Mesh,
   OrthographicCamera,
+  PerspectiveCamera,
   Scene
 } from './scene.js';
 import {
+  createBoxGeometry,
   createPlaneGeometry,
   toRadians
 } from './utils.js';
 
 const DOM_ELEMENTS_ID = {
   defaultShader: 'defaultShader',
+  cameraSelect: 'cameraSelect',
   compileButton: 'compileButton',
   compiledStatus: 'compiledStatus',
   errorStatus: 'errorStatus',
+  geometrySelect: 'geometrySelect',
   info: 'info',
+  rotationCheckbox: 'rotationCheckbox',
   shaderTextarea: 'shaderTextarea'
 };
 
+export const GEOMETRY_TYPE = {
+  plane: 0,
+  box: 1
+};
+
+export const CAMERA_TYPE = {
+  orthographic: 0,
+  perspective: 1
+};
+
+const _tmpRotation = Euler.create();
+
 export default class App {
   constructor(renderer, canvas) {
-    this.renderer = renderer;
-    this.canvas = canvas;
+    this._renderer = renderer;
+    this._canvas = canvas;
+    this._autoRotation = false;
 
     const scene = new Scene();
     Color.set(scene.backgroundColor, 0.0, 0.0, 0.0);
-    this.sceneNode = new Node(scene);
+    this._sceneNode = new Node(scene);
 
-    const camera = new OrthographicCamera();
-    this.cameraNode = new Node(camera);
-    this.sceneNode.add(this.cameraNode);
+    this._orthographicCamera = new OrthographicCamera();
+    this._perspectiveCamera = new PerspectiveCamera(
+      toRadians(60),
+      window.innerWidth / window.innerHeight,
+      2000.0,
+      0.001
+    );
+    this._cameraNode = new Node(this._orthographicCamera);
+    Vector3.set(this._cameraNode.position, 0.0, 0.0, 2.0);
+    this._sceneNode.add(this._cameraNode);
 
-    const geometry = createPlaneGeometry(2.0, 2.0);
-    const material = new Material();
-    const mesh = new Mesh(geometry, material);
-    this.meshNode = new Node(mesh);
-    this.sceneNode.add(this.meshNode);
+    const mesh = new Mesh(createPlaneGeometry(2.0, 2.0), new Material());
+    this._meshNode = new Node(mesh);
+    this._sceneNode.add(this._meshNode);
 
     this._setupDomElements();
   }
@@ -73,12 +96,15 @@ export default class App {
     const height = window.innerHeight;
     const pixelRatio = window.devicePixelRatio;
 
-    this.canvas.width = Math.floor(width * pixelRatio);
-    this.canvas.height = Math.floor(height * pixelRatio);
-    this.canvas.style.width = width + 'px';
-    this.canvas.style.height = height + 'px';
+    this._canvas.width = Math.floor(width * pixelRatio);
+    this._canvas.height = Math.floor(height * pixelRatio);
+    this._canvas.style.width = width + 'px';
+    this._canvas.style.height = height + 'px';
 
-    this.renderer.setSize(width, height);
+    this._perspectiveCamera.aspect = width / height;
+    this._perspectiveCamera.updateProjectionMatrix();
+
+    this._renderer.setSize(width, height);
     this._render();
   }
 
@@ -87,16 +113,39 @@ export default class App {
     area.innerText = document.getElementById(DOM_ELEMENTS_ID.defaultShader).innerText.trim();
 
     const info = document.getElementById(DOM_ELEMENTS_ID.info);
-    document.addEventListener('mouseenter', e => {
+    document.addEventListener('mouseenter', () => {
       info.style.opacity = 0.8;
     });
-    document.addEventListener('mouseleave', e => {
+    document.addEventListener('mouseleave', () => {
       info.style.opacity = 0.0;
     });
 
     const button = document.getElementById(DOM_ELEMENTS_ID.compileButton);
-    button.addEventListener('click', _ => {
+    button.addEventListener('click', () => {
       this._updateShader();
+    });
+
+    const cameraSelect = document.getElementById(DOM_ELEMENTS_ID.cameraSelect);
+    cameraSelect.addEventListener('change', e => {
+      const option = e.target.options[e.target.selectedIndex];
+      this._switchCamera(
+        option.value === 'orthographic'
+          ? CAMERA_TYPE.orthographic : CAMERA_TYPE.perspective
+      );
+    });
+
+    const geometrySelect = document.getElementById(DOM_ELEMENTS_ID.geometrySelect);
+    geometrySelect.addEventListener('change', e => {
+      const option = e.target.options[e.target.selectedIndex];
+      this._switchGeometry(
+        option.value === 'plane'
+          ? GEOMETRY_TYPE.plane : GEOMETRY_TYPE.box
+      );
+    });
+
+    const roatationCheckbox = document.getElementById(DOM_ELEMENTS_ID.rotationCheckbox);
+    rotationCheckbox.addEventListener('change', e => {
+      this._enableAutoRotation(e.target.checked);
     });
   }
 
@@ -109,6 +158,33 @@ export default class App {
     run();
   }
 
+  _switchCamera(cameraType) {
+    this._cameraNode.setObject(
+      cameraType === CAMERA_TYPE.orthographic
+        ? this._orthographicCamera
+        : this._perspectiveCamera
+    );
+  }
+
+  _switchGeometry(geometryType) {
+    const node = this._meshNode
+    const mesh = node.object;
+    if (geometryType === GEOMETRY_TYPE.plane) {
+      mesh.geometry = createPlaneGeometry(2.0, 2.0);
+      Vector3.set(node.position, 0.0, 0.0, 0.0);
+      Euler.set(node.rotation, 0.0, 0.0, 0.0);
+    } else {
+      mesh.geometry = createBoxGeometry(2.0, 2.0, 2.0);
+      Vector3.set(node.position, 0.0, 0.0, -2.0);
+      Euler.set(node.rotation, toRadians(30.0), 0.0, 0.0);
+    }
+  }
+
+  _enableAutoRotation(enabled) {
+    this._autoRotation = enabled;
+    Euler.setY(this._meshNode.rotation, 0.0);
+  }
+
   async _updateShader() {
     this._cleanupHighlights();
 
@@ -116,7 +192,7 @@ export default class App {
     const material = new ShaderMaterial(shaderCode);
 
     try {
-      await this.renderer.compile(material);
+      await this._renderer.compile(material);
     } catch (error) {
       this._updateStatusElement(false);
       this._highlightCompileErrors(error.messages);
@@ -124,7 +200,7 @@ export default class App {
     }
 
     this._updateStatusElement(true);
-    this.meshNode.object.material = material;
+    this._meshNode.object.material = material;
   }
 
   _updateStatusElement(succeeded) {
@@ -182,11 +258,14 @@ export default class App {
   }
 
   _animate() {
-    this.sceneNode.object.update();
+    this._sceneNode.object.update();
+    if (this._autoRotation) {
+      Euler.add(this._meshNode.rotation, Euler.set(_tmpRotation, 0.0, 0.005, 0.0));
+    }
   }
 
   _render() {
-    this.renderer.render(this.sceneNode, this.cameraNode);
+    this._renderer.render(this._sceneNode, this._cameraNode);
   }
 }
 

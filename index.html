@@ -32,6 +32,7 @@
       #statusSpan {
         background: #fff;
         padding: 5px;
+        margin: 5px;
       }
 
       #compiledStatus {
@@ -40,6 +41,14 @@
 
       #errorStatus {
         color: #f00;
+      }
+
+      #geometrySelect {
+        margin: 5px;
+      }
+
+      #cameraSelect {
+        margin: 5px;
       }
 
       #sourceLink {
@@ -73,6 +82,18 @@
           <span id="compiledStatus" style="display: none;">Compiled</span>
           <span id="errorStatus" style="display: none;">Error</span>
         </span>
+        Geometry
+        <select id="geometrySelect">
+          <option value="plane" selected>Plane</option>
+          <option value="box">Box</option>
+        </select>
+        Camera
+        <select id="cameraSelect">
+          <option value="orthographic" selected>Orthographic</option>
+          <option value="perspective">Perspective</option>
+        </select>
+        Rotation
+        <input id="rotationCheckbox" type="checkbox">
       </div>
       <a id="sourceLink" href="https://github.com/takahirox/wgsl-sandbox" target="_blank">GitHub</a>
       <div class="textarea" id="shaderTextarea" contentEditable="true" spellcheck="false"></div>

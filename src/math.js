@@ -37,12 +37,65 @@ export class Vector3 {
     v[2] = value;
     return v;
   }
+
+  static copy(v, src) {
+    for (let i = 0; i < 3; i++) {
+      v[i] = src[i];
+    }
+    return v;
+  }
+
+  static length(v) {
+    return Math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
+  }
+
+  static normalize(v) {
+    const length = Vector3.length(v);
+
+    // @TODO: Error handling?
+    if (length !== 0.0) {
+      for (let i = 0; i < 3; i++) {
+        v[i] /= length;
+      }
+    }
+
+    return v;
+  }
 }
 
 // XYZ order
 export class Euler {
   static create() {
     return new Float32Array(3);
+  }
+
+  static set(e, x, y, z) {
+    e[0] = x;
+    e[1] = y;
+    e[2] = z;
+    return e;
+  }
+
+  static setX(e, value) {
+    e[0] = value;
+    return e;
+  }
+
+  static setY(e, value) {
+    e[1] = value;
+    return e;
+  }
+
+  static setZ(e, value) {
+    e[2] = value;
+    return e;
+  }
+
+  static add(e, e2) {
+    for (let i = 0; i < 3; i++) {
+      e[i] += e2[i];
+    }
+    return e;
   }
 }
 
