@@ -1,6 +1,6 @@
-# wgsl-sandbox
+# online-wgsl-editor
 
-`wgsl-sandbox` (I may rename it later) is a tiny online [WGSL](https://www.w3.org/TR/WGSL/) editor.
+`online-wgsl-editor` is a tiny online [WGSL](https://www.w3.org/TR/WGSL/) editor.
 
 ## Demo
 
