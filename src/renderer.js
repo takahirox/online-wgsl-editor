@@ -429,7 +429,7 @@ class WGPUBindings {
   upload(device, material, node, scene, cameraNode, camera) {
     Matrix4.copy(_cameraMatrixInverse, cameraNode.getMatrix());
     Matrix4.invert(_cameraMatrixInverse);
-    Matrix4.copy(_modelViewMatrix, _cameraMatrixInverse, node.getMatrix());
+    Matrix4.multiply(_modelViewMatrix, _cameraMatrixInverse, node.getMatrix());
     Matrix3.makeNormalFromMatrix4(_normalMatrix, _modelViewMatrix);
     Matrix3GPU.copyFromMatrix3(_normalMatrixGPU, _normalMatrix);
     // in seconds
