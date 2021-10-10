@@ -36,6 +36,7 @@ export const CAMERA_TYPE = {
   perspective: 1
 };
 
+const SEGMENT_NUM = 64;
 const _tmpRotation = Euler.create();
 
 export default class App {
@@ -59,7 +60,8 @@ export default class App {
     Vector3.set(this._cameraNode.position, 0.0, 0.0, 2.0);
     this._sceneNode.add(this._cameraNode);
 
-    const mesh = new Mesh(createPlaneGeometry(2.0, 2.0), new Material());
+    const mesh = new Mesh(
+      createPlaneGeometry(2.0, 2.0, SEGMENT_NUM, SEGMENT_NUM), new Material());
     this._meshNode = new Node(mesh);
     this._sceneNode.add(this._meshNode);
 
@@ -170,11 +172,12 @@ export default class App {
     const node = this._meshNode
     const mesh = node.object;
     if (geometryType === GEOMETRY_TYPE.plane) {
-      mesh.geometry = createPlaneGeometry(2.0, 2.0);
+      mesh.geometry = createPlaneGeometry(2.0, 2.0, SEGMENT_NUM, SEGMENT_NUM);
       Vector3.set(node.position, 0.0, 0.0, 0.0);
       Euler.set(node.rotation, 0.0, 0.0, 0.0);
     } else {
-      mesh.geometry = createBoxGeometry(2.0, 2.0, 2.0);
+      mesh.geometry = createBoxGeometry(
+        2.0, 2.0, 2.0, SEGMENT_NUM, SEGMENT_NUM, SEGMENT_NUM);
       Vector3.set(node.position, 0.0, 0.0, -2.0);
       Euler.set(node.rotation, toRadians(30.0), 0.0, 0.0);
     }
