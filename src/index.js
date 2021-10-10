@@ -189,7 +189,7 @@ export default class App {
   }
 
   async _updateShader() {
-    this._cleanupHighlights();
+    this._flattenTextarea();
 
     const shaderCode = document.getElementById(DOM_ELEMENTS_ID.shaderTextarea).innerText;
     const material = new ShaderMaterial(shaderCode);
@@ -214,50 +214,83 @@ export default class App {
   _highlightCompileErrors(messages) {
     const area = document.getElementById(DOM_ELEMENTS_ID.shaderTextarea);
     // Assuming messages are position order
-    messages.forEach(message => {
-      const offset = this._findOffsetInShaderTextArea(message.lineNum);
+    for (let index = 0; index < messages.length; index++) {
+      let message = messages[index];
+      const lineNum = message.lineNum;
+      const linePoses = [];
+      const lengthes = [];
+      const params = [];
+      while (true) {
+        params.push({linePos: message.linePos, length: message.length, message: message.message});
+        if (index >= messages.length - 1 || messages[index + 1].lineNum !== lineNum) {
+          break;
+        }
+        message = messages[++index];
+      }
+      const {parent, offset} = this._findTargetRangeInTextarea(lineNum);
       const range = document.createRange();
-      range.setStart(area, offset);
-      range.setEnd(area, offset + 1);
-      const child = area.childNodes[offset];
-      // Checking the node type just in case.
-      const chunk = child.nodeType === window.Node.TEXT_NODE
-        // I don't know why but -1 seems to be needed
-        ? child.textContent.slice(message.linePos - 1, message.linePos + message.length - 1)
-        : '';
+      range.setStart(parent, offset);
+      range.setEnd(parent, offset + 1);
+      const child = parent.childNodes[offset];
+      let title = '';
+      for (const param of params) {
+        const chunk =
+          // I don't know why but -1 seems to be needed
+          child.textContent.slice(param.linePos - 1, param.linePos + param.length - 1);
+        title += `- ${lineNum}:${param.linePos} ${param.message}, "${chunk}"\n`;
+      }
       const mark = document.createElement('mark');
-      mark.title = `${message.lineNum}:${message.linePos} ${message.message}, "${chunk}"`;
+      mark.title = title;
       range.surroundContents(mark);
-    });
-  }
-
-  _cleanupHighlights() {
-    const area = document.getElementById(DOM_ELEMENTS_ID.shaderTextarea);
-    area.childNodes.forEach(child => {
-      if (child.tagName && child.tagName.toLowerCase() === 'mark') {
-        child.parentNode.insertBefore(child.childNodes[0], child);
-        child.parentNode.removeChild(child);
-      }
-    });
-  }
-
-  _findOffsetInShaderTextArea(lineNum) {
-    const area = document.getElementById(DOM_ELEMENTS_ID.shaderTextarea);
-    if (lineNum === 1) {
-      return 0;
     }
+  }
+
+  _flattenTextarea() {
+    const area = document.getElementById(DOM_ELEMENTS_ID.shaderTextarea);
+    // I'm not sure if this can flatten the elements on all platforms.
+    area.innerText = area.innerText;
+  }
+
+  _findTargetRangeInTextarea(lineNum) {
+    const area = document.getElementById(DOM_ELEMENTS_ID.shaderTextarea);
+
     let currentLineNum = 1;
-    for (let i = 0; i < area.childNodes.length; i++) {
-      const child = area.childNodes[i];
-      if (child.tagName && child.tagName.toLowerCase() === 'br') {
-        currentLineNum++;
+
+    const traverse = (element, parent) => {
+      let offset = 0;
+      while (element) {
+        if (element.tagName && element.tagName.toLowerCase() === 'br') {
+          currentLineNum++;
+        } else if (element.tagName && element.tagName.toLowerCase() === 'div') {
+          currentLineNum++;
+          const result = traverse(element.firstChild, element);
+          if (result) {
+            return result;
+          }
+          currentLineNum--;
+        } else if (element.nodeType === window.Node.TEXT_NODE) {
+          if (currentLineNum === lineNum) {
+            return {
+              parent: parent,
+              offset: offset
+            };
+          }
+        } else if (!element.tagName || element.tagName.toLowerCase() !== 'mark') {
+          // Unexpected element
+          return null;
+        }
+        element = element.nextSibling;
+        offset += 1;
       }
-      if (lineNum === currentLineNum) {
-        return i + 1;
-      }
+      return null;
+    };
+
+    const result = traverse(area.firstChild, area);
+    if (result) {
+      return result;
     }
-    // @TODO: Error handling?
-    return -1;
+
+    throw new Error('Failed to find line num ' + lineNum);
   }
 
   _animate() {
