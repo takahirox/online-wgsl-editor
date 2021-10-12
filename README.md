@@ -6,7 +6,7 @@ You can test WGSL on your web browser. It is good especially for people who want
 
 ## Demo
 
-[Online demo](https://takahirox.github.io/wgsl-sandbox/)
+[Online demo](https://takahirox.github.io/online-wgsl-editor/index.html)
 
 To try the demo, download [Google Chrome Canary](https://www.google.com/chrome/canary/) and enable `#enable-unsafe-webgpu` flag via `chrome://flags` because [WebGPU](https://www.w3.org/TR/webgpu) is still an experimental feature.
 
