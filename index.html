@@ -3,6 +3,8 @@
     <title>WGSL sandbox</title>
     <!-- until Nov 23, 2021 -->
     <meta http-equiv="origin-trial" content="ApPO2aGStAGnAwjSYagzhdHR5Fptfn2GnEDmVql0R1bOWXu43oKuEs7CTLWLM4AIzUHbea+L1f8/ixDj3ndwagAAAABTeyJvcmlnaW4iOiJodHRwczovL3Rha2FoaXJveC5naXRodWIuaW86NDQzIiwiZmVhdHVyZSI6IldlYkdQVSIsImV4cGlyeSI6MTY0MzE1NTE5OX0=">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.63.1/codemirror.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.63.1/codemirror.min.css">
     <style>
       body {
         position: absolute;
@@ -16,13 +18,21 @@
         opacity: 0.8;
       }
 
-      #shaderTextarea {
+      .CodeMirror {
         position: absolute;
         width: 98%;
         height: 90vh;
         margin: 5% 1% 1% 1%;
         background: #000;
         color: #fff;
+      }
+
+      .CodeMirror-cursor {
+        border-left: 1px solid #fff !important;
+      }
+
+      .errorMark {
+        background: #660;
       }
 
       #controls {
@@ -61,25 +71,11 @@
         background: #000;
         color: #fff;
       }
-
-      .textarea {
-        -moz-appearance: textfield-multiline;
-        -webkit-appearance: textarea;
-        border: 1px solid gray;
-        font: medium -moz-fixed;
-        font: -webkit-small-control;
-        height: 28px;
-        overflow: auto;
-        padding: 2px;
-        resize: both;
-        white-space: pre;
-      }
     </style>
   </head>
   <body>
     <div id="info">
       <div id="controls">
-        <button id="compileButton">Compile</button>
         <span id="statusSpan">
           <span id="compiledStatus" style="display: none;">Compiled</span>
           <span id="errorStatus" style="display: none;">Error</span>
@@ -98,7 +94,7 @@
         <input id="rotationCheckbox" type="checkbox">
       </div>
       <a id="sourceLink" href="https://github.com/takahirox/online-wgsl-editor" target="_blank">GitHub</a>
-      <div class="textarea" id="shaderTextarea" contentEditable="true" spellcheck="false"></div>
+      <textarea id="shaderTextarea" spellcheck="false"></textarea>
     </div>
     <script id="defaultShader" type="wgsl">
 struct VertexOutput {

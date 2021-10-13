@@ -17,7 +17,6 @@ import {
 const DOM_ELEMENTS_ID = {
   defaultShader: 'defaultShader',
   cameraSelect: 'cameraSelect',
-  compileButton: 'compileButton',
   compiledStatus: 'compiledStatus',
   errorStatus: 'errorStatus',
   geometrySelect: 'geometrySelect',
@@ -65,6 +64,8 @@ export default class App {
     this._meshNode = new Node(mesh);
     this._sceneNode.add(this._meshNode);
 
+    this._errorMarks = [];
+    this._editor = this._createEditor();
     this._setupDomElements();
   }
 
@@ -110,21 +111,38 @@ export default class App {
     this._render();
   }
 
-  _setupDomElements() {
+  _createEditor() {
     const area = document.getElementById(DOM_ELEMENTS_ID.shaderTextarea);
-    area.innerText = document.getElementById(DOM_ELEMENTS_ID.defaultShader).innerText.trim();
+    area.value = document.getElementById(DOM_ELEMENTS_ID.defaultShader).innerText.trim();
 
+    const inputQueue = [];
+    const editor = CodeMirror.fromTextArea(area, {
+      lineNumbers: true,
+      matchBrackets: true,
+      indentWithTabs: true,
+      tabSize: 4,
+      indentUnit: 4
+    });
+    editor.on('change', () => {
+      inputQueue.push(0);
+      setTimeout(() => {
+        inputQueue.pop();
+        if (inputQueue.length === 0) {
+          this._updateShader();
+        }
+      }, 500);
+    });
+
+    return editor;
+  }
+
+  _setupDomElements() {
     const info = document.getElementById(DOM_ELEMENTS_ID.info);
     document.addEventListener('mouseenter', () => {
       info.style.opacity = 0.8;
     });
     document.addEventListener('mouseleave', () => {
       info.style.opacity = 0.0;
-    });
-
-    const button = document.getElementById(DOM_ELEMENTS_ID.compileButton);
-    button.addEventListener('click', () => {
-      this._updateShader();
     });
 
     const cameraSelect = document.getElementById(DOM_ELEMENTS_ID.cameraSelect);
@@ -189,10 +207,10 @@ export default class App {
   }
 
   async _updateShader() {
-    this._flattenTextarea();
-
-    const shaderCode = document.getElementById(DOM_ELEMENTS_ID.shaderTextarea).innerText;
+    const shaderCode = this._editor.getValue();
     const material = new ShaderMaterial(shaderCode);
+
+    this._removeCompileErrorHightlights();
 
     try {
       await this._renderer.compile(material);
@@ -211,86 +229,34 @@ export default class App {
     document.getElementById(DOM_ELEMENTS_ID.errorStatus).style.display = !succeeded ? '' : 'none';
   }
 
+  _removeCompileErrorHightlights() {
+    this._errorMarks.forEach(mark => {
+      mark.clear();
+    });
+    this._errorMarks.length = 0;
+  }
+
   _highlightCompileErrors(messages) {
-    const area = document.getElementById(DOM_ELEMENTS_ID.shaderTextarea);
-    // Assuming messages are position order
     for (let index = 0; index < messages.length; index++) {
-      let message = messages[index];
-      const lineNum = message.lineNum;
-      const linePoses = [];
-      const lengthes = [];
-      const params = [];
-      while (true) {
-        params.push({linePos: message.linePos, length: message.length, message: message.message});
-        if (index >= messages.length - 1 || messages[index + 1].lineNum !== lineNum) {
-          break;
-        }
-        message = messages[++index];
-      }
-      const {parent, offset} = this._findTargetRangeInTextarea(lineNum);
-      const range = document.createRange();
-      range.setStart(parent, offset);
-      range.setEnd(parent, offset + 1);
-      const child = parent.childNodes[offset];
-      let title = '';
-      for (const param of params) {
-        const chunk =
-          // I don't know why but -1 seems to be needed
-          child.textContent.slice(param.linePos - 1, param.linePos + param.length - 1);
-        title += `- ${lineNum}:${param.linePos} ${param.message}, "${chunk}"\n`;
-      }
-      const mark = document.createElement('mark');
-      mark.title = title;
-      range.surroundContents(mark);
-    }
-  }
+      const message = messages[index];
 
-  _flattenTextarea() {
-    const area = document.getElementById(DOM_ELEMENTS_ID.shaderTextarea);
-    // I'm not sure if this can flatten the elements on all platforms.
-    area.innerText = area.innerText;
-  }
-
-  _findTargetRangeInTextarea(lineNum) {
-    const area = document.getElementById(DOM_ELEMENTS_ID.shaderTextarea);
-
-    let currentLineNum = 1;
-
-    const traverse = (element, parent) => {
-      let offset = 0;
-      while (element) {
-        if (element.tagName && element.tagName.toLowerCase() === 'br') {
-          currentLineNum++;
-        } else if (element.tagName && element.tagName.toLowerCase() === 'div') {
-          currentLineNum++;
-          const result = traverse(element.firstChild, element);
-          if (result) {
-            return result;
+      this._errorMarks.push(
+        this._editor.markText(
+          {
+            line: message.lineNum - 1,
+            ch: message.linePos - 1
+          },
+          {
+            line: message.lineNum - 1,
+            ch: message.linePos - 1 + message.length
+          },
+          {
+            className: 'errorMark',
+            attributes: {title: message.message}
           }
-          currentLineNum--;
-        } else if (element.nodeType === window.Node.TEXT_NODE) {
-          if (currentLineNum === lineNum) {
-            return {
-              parent: parent,
-              offset: offset
-            };
-          }
-        } else if (!element.tagName || element.tagName.toLowerCase() !== 'mark') {
-          // Unexpected element
-          return null;
-        }
-        element = element.nextSibling;
-        offset += 1;
-      }
-      return null;
-    };
-
-    const result = traverse(area.firstChild, area);
-    if (result) {
-      return result;
+        )
+      );
     }
-
-    throw new Error('Failed to find line num ' + lineNum);
   }
 
   _animate() {
