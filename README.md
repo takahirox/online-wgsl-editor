@@ -8,7 +8,7 @@ You can test WGSL on your web browser. It is good especially for people who want
 
 [Online demo](https://takahirox.github.io/online-wgsl-editor/index.html)
 
-To try the demo, download [Google Chrome Canary](https://www.google.com/chrome/canary/) and enable `#enable-unsafe-webgpu` flag via `chrome://flags` because [WebGPU](https://www.w3.org/TR/webgpu) is still an experimental feature.
+Use Chrome for the Demo. It doesn't run on FireFox and other browsers yet.
 
 ## Screenshots
 
@@ -23,6 +23,8 @@ $ npm install
 $ npm run start
 # Access http://localhost:8080 on your web browser
 ```
+
+Note: To run the demo locally, download [Google Chrome Canary](https://www.google.com/chrome/canary/) and enable `#enable-unsafe-webgpu` flag via `chrome://flags`.
 
 ## Thanks to
 
