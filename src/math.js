@@ -137,7 +137,7 @@ export class Quaternion {
 
 export class Matrix3 {
   static create() {
-    return Matrix4.makeIdentity(new Float32Array(9));
+    return Matrix3.makeIdentity(new Float32Array(9));
   }
 
   static makeIdentity(m) {
