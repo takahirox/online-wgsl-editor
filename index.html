@@ -103,7 +103,6 @@ struct VertexOutput {
   [[location(2)]] uv: vec2<f32>;
 };
 
-[[block]]
 struct Uniform {
   model_matrix: mat4x4<f32>;
   view_matrix: mat4x4<f32>;
@@ -139,6 +138,17 @@ fn fs_main(in: VertexOutput) -> [[location(0)]] vec4<f32> {
       const run = async () => {
         let app;
         try {
+
+          // Chrome 97 and older seems to follow a bit older WGSL specification
+          // and they require "[[block]]" in the WGSL shader.
+          // Inserting it to the shader code for them here.
+          // @TODO: Is newline code '\n' on all platforms?
+          const match = navigator.userAgent.match(/Chrome\/([0-9]+)/)
+          if (match && parseInt(match[1]) < 98) {
+            document.getElementById('defaultShader').textContent = 
+              document.getElementById('defaultShader').textContent.replace('\nstruct Uniform {\n', '\n[[block]]\nstruct Uniform {\n');
+          }
+
           app = await App.create();
         } catch (error) {
           if (error instanceof UnsupportedWebGPUError) {
