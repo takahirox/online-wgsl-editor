@@ -402,7 +402,8 @@ class WGPUBindings {
     // elapsed time float
     const buffer = createAndInitBuffer(
       device,
-      new Float32Array(16 + 16 + 16 + 12 + 1),
+      // The last 3 is padding to 256 bytes
+      new Float32Array(16 + 16 + 16 + 12 + 1 + 3),
       GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
     );
     const group = device.createBindGroup({
