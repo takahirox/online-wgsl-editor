@@ -48,6 +48,7 @@ export default class WGPURenderer {
     this._renderPassDescriptor = {
       colorAttachments: [{
         loadValue: {r: 0.0, g: 0.0, b: 0.0, a: 1.0},
+        storeOp: 'store',
         view: null // setup in render()
       }],
       depthStencilAttachment: {
@@ -401,7 +402,8 @@ class WGPUBindings {
     // elapsed time float
     const buffer = createAndInitBuffer(
       device,
-      new Float32Array(16 + 16 + 16 + 12 + 1),
+      // The last 3 is padding to 256 bytes
+      new Float32Array(16 + 16 + 16 + 12 + 1 + 3),
       GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
     );
     const group = device.createBindGroup({
