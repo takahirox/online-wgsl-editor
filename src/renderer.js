@@ -101,10 +101,11 @@ export default class WGPURenderer {
     this._renderPipelines.update(this._device, material, binding.layout);
     const module = this._renderPipelines.get(material).module;
     const log = await module.getLog();
-    if (log.messages.length > 0) {
+    const errors = log.messages.filter(m => m.type == "error");
+    if (errors.length > 0) {
       this._bindings.remove(material);
       this._renderPipelines.remove(material);
-      throw new CompileError(log.messages.slice(), 'Compile error');
+      throw new CompileError(errors.slice(), 'Compile error');
     }
   }
 
