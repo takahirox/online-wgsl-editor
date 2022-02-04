@@ -139,11 +139,20 @@ fn fs_main(in: VertexOutput) -> [[location(0)]] vec4<f32> {
         let app;
         try {
 
+          // Chrome 98 and older seems to follow a bit older WGSL specification
+          // and they require "[[block]]" in the WGSL shader.
+          // Inserting it to the shader code for them here.
+          // @TODO: Is newline code '\n' on all platforms?
+          const match = navigator.userAgent.match(/Chrome\/([0-9]+)/)
+          if (match && parseInt(match[1]) < 99) {
+            document.getElementById('defaultShader').textContent = 
+              document.getElementById('defaultShader').textContent.replace('\nstruct Uniform {\n', '\n[[block]]\nstruct Uniform {\n');
+          }
           // Chrome 100 and newer doesn't seem to accept deprecated WGSL syntax [[foo]]
           // But the current Chrome 97 doesn't recognize the new syntax @foo yet.
           // So converting the WGSL code for Chrome 100 and newer so far.
-          const match = navigator.userAgent.match(/Chrome\/([0-9]+)/)
           if (match && parseInt(match[1]) >= 100) {
+            // Replacement logic can be more elegant but I don't mind
             document.getElementById('defaultShader').textContent = 
               document.getElementById('defaultShader').textContent
                 .replaceAll('[[', '@')
