@@ -148,6 +148,17 @@ fn fs_main(in: VertexOutput) -> [[location(0)]] vec4<f32> {
             document.getElementById('defaultShader').textContent = 
               document.getElementById('defaultShader').textContent.replace('\nstruct Uniform {\n', '\n[[block]]\nstruct Uniform {\n');
           }
+          // Chrome 100 and newer doesn't seem to accept deprecated WGSL syntax [[foo]]
+          // But the current Chrome 97 doesn't recognize the new syntax @foo yet.
+          // So converting the WGSL code for Chrome 100 and newer so far.
+          if (match && parseInt(match[1]) >= 100) {
+            // Replacement logic can be more elegant but I don't mind
+            document.getElementById('defaultShader').textContent = 
+              document.getElementById('defaultShader').textContent
+                .replaceAll('[[', '@')
+                .replaceAll(']]', '')
+                .replaceAll(', binding', ' @binding');
+          }
 
           app = await App.create();
         } catch (error) {
