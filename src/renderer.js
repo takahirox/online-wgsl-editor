@@ -33,12 +33,12 @@ export default class WGPURenderer {
     this._height = DEFAULT_HEIGHT;
     this._pixelRatio = DEFAULT_PIXEL_RATIO;
     this._context = context;
-    this._swapChain = this._context.configure(createContextConfiguration(
-      this._device,
-      this._width,
-      this._height,
-      this._pixelRatio
-    ));
+    this._swapChain = this._context.configure({
+      alphaMode: 'opaque',
+      device: this._device,
+      format: 'bgra8unorm',
+      usage: GPUTextureUsage.RENDER_ATTACHMENT
+    });
     this._depthBuffer = createDepthBuffer(
       this._device,
       this._width,
@@ -47,14 +47,17 @@ export default class WGPURenderer {
     );
     this._renderPassDescriptor = {
       colorAttachments: [{
-        loadValue: {r: 0.0, g: 0.0, b: 0.0, a: 1.0},
+        loadOp: 'clear',
+        clearValue: {r: 0.0, g: 0.0, b: 0.0, a: 1.0},
         storeOp: 'store',
         view: null // setup in render()
       }],
       depthStencilAttachment: {
-        depthLoadValue: 1.0,
+        depthLoadOp: 'clear',
+        depthClearValue: 1.0,
         depthStoreOp: 'store',
-        stencilLoadValue: 0.0,
+        stencilLoadOp: 'clear',
+        stencilClearValue: 0.0,
         stencilStoreOp: 'store',
         view: null // setup in render()
       }
@@ -81,13 +84,11 @@ export default class WGPURenderer {
   setSize(width, height) {
     this._width = width;
     this._height = height;
-    this._updateContextConfiguration();
     this._recreateDepthBuffer();
   }
 
   setPixelRatio(pixelRatio) {
     this._pixelRatio = pixelRatio;
-    this._updateContextConfiguration();
     this._recreateDepthBuffer();
   }
 
@@ -126,9 +127,9 @@ export default class WGPURenderer {
 
     const colorAttachment = this._renderPassDescriptor.colorAttachments[0];
     colorAttachment.view = this._context.getCurrentTexture().createView();
-    colorAttachment.loadValue.r = scene.backgroundColor[0];
-    colorAttachment.loadValue.g = scene.backgroundColor[1];
-    colorAttachment.loadValue.b = scene.backgroundColor[2];
+    colorAttachment.clearValue.r = scene.backgroundColor[0];
+    colorAttachment.clearValue.g = scene.backgroundColor[1];
+    colorAttachment.clearValue.b = scene.backgroundColor[2];
 
     this._renderPassDescriptor.depthStencilAttachment.view =
       this._depthBuffer.createView();
@@ -174,17 +175,8 @@ export default class WGPURenderer {
       }
     });
 
-    pass.endPass();
+    pass.end();
     this._device.queue.submit([encoder.finish()]);
-  }
-
-  _updateContextConfiguration() {
-    this._context.configure(createContextConfiguration(
-      this._device,
-      this._width,
-      this._height,
-      this._pixelRatio
-    ));
   }
 
   _recreateDepthBuffer() {
@@ -197,19 +189,6 @@ export default class WGPURenderer {
     );
   }
 }
-
-const createContextConfiguration = (device, width, height, pixelRatio) => {
-  return {
-    device: device,
-    format: 'bgra8unorm',
-    size: {
-      width: Math.floor(width * pixelRatio),
-      height: Math.floor(height * pixelRatio),
-      depthOrArrayLayers: 1
-    },
-    usage: GPUTextureUsage.RENDER_ATTACHMENT
-  };
-};
 
 const createDepthBuffer = (device, width, height, pixelRatio) => {
   return device.createTexture({
