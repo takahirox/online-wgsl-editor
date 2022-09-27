@@ -10,6 +10,10 @@ You can test WGSL on your web browser. It is good especially for people who want
 
 Use Chrome for the Demo. It doesn't run on FireFox and other browsers yet.
 
+## Presentation
+
+[WebGL + WebGPU Meetup - January 2022](https://www.khronos.org/events/webgl-webgpu-meetup-january-2022) / [Slides](https://docs.google.com/presentation/d/1WP5YGAoYvFnj2JYinV7r7SNA8sKngfW2ZNaeyIDiIy8)
+
 ## Screenshots
 
 <img src="./screenshots/screenshot.png" width="640">
