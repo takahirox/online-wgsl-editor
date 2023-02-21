@@ -379,10 +379,11 @@ class WGPUBindings {
     // model matrix mat4x4
     // view matrix mat4x4
     // projection matrix mat4x4
+    // normal matrix: mat3x3
     // elapsed time float
+    // padding 12 bytes to 256 bytes
     const buffer = createAndInitBuffer(
       device,
-      // The last 3 is padding to 256 bytes
       new Float32Array(16 + 16 + 16 + 12 + 1 + 3),
       GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
     );
@@ -438,12 +439,13 @@ class WGPUBindings {
         // projection matrix mat4x4
         // normal matrix mat3x3
         // elapsed time float
+        // padding 12 bytes to 256 bytes
         {
           binding: 0,
           buffer: {
             type: 'uniform',
             hasDynamicOffset: false,
-            minBindingSize: (16 + 16 + 16 + 12 + 1) * 4,
+            minBindingSize: (16 + 16 + 16 + 12 + 1 + 3) * 4,
           },
           visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT
         }
