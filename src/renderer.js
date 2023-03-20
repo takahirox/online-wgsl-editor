@@ -211,7 +211,7 @@ class WGPUShaderModule {
   }
 
   getLog(device) {
-    return this.module.compilationInfo();
+    return this.module.getCompilationInfo();
   }
 }
 
