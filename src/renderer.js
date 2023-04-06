@@ -211,7 +211,12 @@ class WGPUShaderModule {
   }
 
   getLog(device) {
-    return this.module.getCompilationInfo();
+    // compilationInfo() has been renamed to getCompilationInfo()
+    // in the WebGPU spec. Remove compilationInfo() when major
+    // browsers support getCompilationInfo().
+    return ('getCompilationInfo' in this.module)
+      ? this.module.getCompilationInfo()
+      : this.module.compilationInfo();
   }
 }
 
