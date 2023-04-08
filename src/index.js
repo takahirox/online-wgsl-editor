@@ -13,6 +13,7 @@ import {
   createPlaneGeometry,
   toRadians
 } from './utils.js';
+import './wgsl-mode.js';
 
 const DOM_ELEMENTS_ID = {
   defaultShader: 'defaultShader',
@@ -121,7 +122,9 @@ export default class App {
       matchBrackets: true,
       indentWithTabs: true,
       tabSize: 4,
-      indentUnit: 4
+      indentUnit: 4,
+      mode: 'wgsl',
+      theme: 'ayu-dark'
     });
     editor.on('change', () => {
       inputQueue.push(0);
