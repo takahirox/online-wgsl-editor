@@ -146,7 +146,8 @@ export default class WGPURenderer {
       const material = mesh.material;
 
       this._bindings.update(this._device, material);
-      this._bindings.upload(this._device, material, node, scene, cameraNode, camera);
+      this._bindings.upload(this._device, material, node, scene, cameraNode,
+        camera, this._width, this._height, this._pixelRatio);
       const binding = this._bindings.get(material);
       pass.setBindGroup(0, binding.group);
 
@@ -363,6 +364,7 @@ const _modelViewMatrix = Matrix4.create();
 const _cameraMatrixInverse = Matrix4.create();
 const _normalMatrix = Matrix3.create();
 const _normalMatrixGPU = Matrix3GPU.create();
+const _resolution = new Float32Array(2);
 const _elapsedTime = new Float32Array(1);
 
 // @TODO: Implement correctly
@@ -385,11 +387,12 @@ class WGPUBindings {
     // view matrix mat4x4
     // projection matrix mat4x4
     // normal matrix: mat3x3
+    // resolution: vec2
     // elapsed time float
-    // padding 12 bytes to 256 bytes
+    // padding 4 bytes to 256 bytes
     const buffer = createAndInitBuffer(
       device,
-      new Float32Array(16 + 16 + 16 + 12 + 1 + 3),
+      new Float32Array(16 + 16 + 16 + 12 + 2 + 1 + 1),
       GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
     );
     const group = device.createBindGroup({
@@ -414,12 +417,14 @@ class WGPUBindings {
     this._bindings.delete(material);
   }
 
-  upload(device, material, node, scene, cameraNode, camera) {
+  upload(device, material, node, scene, cameraNode, camera, width, height, pixelRatio) {
     Matrix4.copy(_cameraMatrixInverse, cameraNode.getMatrix());
     Matrix4.invert(_cameraMatrixInverse);
     Matrix4.multiply(_modelViewMatrix, _cameraMatrixInverse, node.getMatrix());
     Matrix3.makeNormalFromMatrix4(_normalMatrix, _modelViewMatrix);
     Matrix3GPU.copyFromMatrix3(_normalMatrixGPU, _normalMatrix);
+    _resolution[0] = width * pixelRatio;
+    _resolution[1] = height * pixelRatio;
     // in seconds
     _elapsedTime[0] = scene.elapsedTime * 0.001;
 
@@ -427,13 +432,15 @@ class WGPUBindings {
     // view matrix mat4x4
     // projection matrix mat4x4
     // normal matrix mat3x3
+    // resolution vec2
     // elapsed time float
     const binding = this._bindings.get(material);
     device.queue.writeBuffer(binding.buffer, 0, node.getMatrix(), 0);
     device.queue.writeBuffer(binding.buffer, 64, _cameraMatrixInverse, 0);
     device.queue.writeBuffer(binding.buffer, 128, camera.projectionMatrix, 0);
     device.queue.writeBuffer(binding.buffer, 192, _normalMatrixGPU, 0);
-    device.queue.writeBuffer(binding.buffer, 240, _elapsedTime, 0);
+    device.queue.writeBuffer(binding.buffer, 240, _resolution, 0);
+    device.queue.writeBuffer(binding.buffer, 248, _elapsedTime, 0);
   }
 
   _createLayout(device) {
@@ -443,14 +450,15 @@ class WGPUBindings {
         // view matrix mat4x4
         // projection matrix mat4x4
         // normal matrix mat3x3
+        // resolution vec2
         // elapsed time float
-        // padding 12 bytes to 256 bytes
+        // padding 4 bytes to 256 bytes
         {
           binding: 0,
           buffer: {
             type: 'uniform',
             hasDynamicOffset: false,
-            minBindingSize: (16 + 16 + 16 + 12 + 1 + 3) * 4,
+            minBindingSize: (16 + 16 + 16 + 12 + 2 + 1 + 1) * 4,
           },
           visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT
         }
