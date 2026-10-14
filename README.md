@@ -30,6 +30,13 @@ $ npm run start
 
 Note: To run the demo locally, download [Google Chrome Canary](https://www.google.com/chrome/canary/) and enable `#enable-unsafe-webgpu` flag via `chrome://flags`.
 
+## Contributing
+
+Use English for new collaboration content. See the [development flow](docs/development-flow.md)
+for Issue authoring, implementation, validation, and PRs, and the
+[review and merge guidelines](docs/review-guidelines.md) for reviewing contributions.
+AI agents should start with [AGENTS.md](AGENTS.md).
+
 ## Thanks to
 
 I referred to [Three.js](https://threejs.org/) and [glMatrix](https://glmatrix.net/) for WebGPU and Math.
