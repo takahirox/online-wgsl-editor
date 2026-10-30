@@ -30,6 +30,19 @@ $ npm run start
 
 Note: To run the demo locally, download [Google Chrome Canary](https://www.google.com/chrome/canary/) and enable `#enable-unsafe-webgpu` flag via `chrome://flags`.
 
+## UI/UX
+
+Apply these principles to the editor's layout, shader editing, geometry/camera/rotation
+controls, and compilation status and error feedback:
+
+1. **Keep it simple.** Show only necessary information and actions; avoid unnecessary UI elements.
+2. **Show, don't tell.** Prefer layout, spacing and visual hierarchy over explanatory labels or prose to communicate structure.
+3. **Intuitive and predictable.** Keep appearance and behavior consistent with user expectations; don't interrupt the user's work.
+
+Preserve necessary control labels, accessible names, error messages, and information
+needed to use the interface. Simplification must preserve meaningful consent,
+destructive-action safeguards, necessary warnings, and necessary user decisions.
+
 ## Contributing
 
 Use English for new collaboration content. See the [development flow](docs/development-flow.md)
