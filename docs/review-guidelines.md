@@ -22,6 +22,8 @@ Verify that behavior matches the expected outcome, the change fits the existing
 architecture, and affected documentation is accurate. For collaboration documents,
 check consistency, Markdown/template syntax, links, and the English convention.
 
+Review applicable interface changes against the [UI/UX principles](../README.md#uiux).
+
 ## Check pre-merge acceptance and post-merge verification
 
 Verify that mandatory pre-merge criteria are achievable and verifiable before merge,
