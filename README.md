@@ -48,6 +48,7 @@ destructive-action safeguards, necessary warnings, and necessary user decisions.
 Use English for new collaboration content. See the [development flow](docs/development-flow.md)
 for Issue authoring, implementation, validation, and PRs, and the
 [review and merge guidelines](docs/review-guidelines.md) for reviewing contributions.
+Choose validation using the [test and CI performance principles](docs/development-flow.md#test-and-ci-performance-principles).
 AI agents should start with [AGENTS.md](AGENTS.md).
 
 ## Thanks to

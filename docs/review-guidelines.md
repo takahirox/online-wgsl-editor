@@ -33,6 +33,13 @@ and the [actual repository tooling](development-flow.md#2-implement-and-validate
 changes require appropriate syntax, link, whitespace, and consistency checks; they
 do not require new runtime tests, browser interaction, or GPU/device validation.
 
+Apply the [test and CI performance principles](development-flow.md#test-and-ci-performance-principles).
+For new or expanded checks, review the additional defects covered, overlap with
+existing coverage, and added execution and maintenance cost. Ask:
+
+> Does this change provide sufficient confidence with the lightest appropriate
+> validation, without redundant execution?
+
 Check that the PR reports actual results, including failures, skipped checks, and
 unperformed checks with reasons. Optional validation must remain distinct from
 mandatory completion criteria. Human confirmation, physical-device testing, subjective
