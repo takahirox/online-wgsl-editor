@@ -45,9 +45,11 @@ local setup. The scripts in [package.json](../package.json) are:
 | `npm run start` | Runs `servez -p 8080` to serve the editor locally. |
 | `npm test` | Prints `Error: no test specified` and exits with status 1; it is a placeholder. |
 
-There are no configured build, lint, or automated test suites. Do not invent commands
-or present the placeholder test as a passing suite. Select checks based on the files
-changed and the actual tooling available:
+There are no configured build, lint, or automated test suites, and no checked-in CI
+workflows. Do not invent commands or present the placeholder test as a passing suite.
+Apply the [test and CI performance principles](#test-and-ci-performance-principles)
+to existing validation and future checks. Select checks based on the files changed
+and the actual tooling available:
 
 - For templates/documentation only, check Markdown syntax, Issue template YAML front
   matter, local links and heading anchors, whitespace with `git diff --check`, and
@@ -61,6 +63,51 @@ changed and the actual tooling available:
 
 Report failures, skipped checks, and unperformed checks accurately, with reasons.
 Do not treat optional checks as mandatory or claim a check passed without performing it.
+
+### Test and CI performance principles
+
+**Detect the required failures at the lightest appropriate layer, without redundant
+execution.** Preserve required behavior, regression confidence, and meaningful
+integration coverage when moving or reducing checks. These principles apply to
+current manual validation and any future tests or CI; they do not introduce tooling
+or a new merge gate.
+
+1. **Prefer the lightest meaningful layer.** When adding tests, cover math, geometry
+   calculations, branches, and broad input combinations with fast unit/component
+   checks where possible. Use browser/WebGPU checks for shader compilation,
+   rendering, editor controls, and feedback that require that environment. Each test
+   should catch a concrete defect rather than mirror its implementation.
+2. **Choose combinations deliberately.** Cover distinct paths with representative
+   shaders, geometry, camera, rotation, and browser cases. Avoid automatically
+   multiplying every option; use exhaustive combinations when their interactions
+   require them. Retain required regressions and integration assertions when
+   redistributing coverage.
+3. **Match validation to the change.** Use the documentation checks above for prose;
+   exercise affected controls and feedback for UI changes, and relevant calculations,
+   compilation, and rendering for core/runtime changes. For future CI/build changes,
+   check the affected configuration, triggers, and outputs. Give fast feedback, full
+   regression validation, and deployment/publication distinct responsibilities and
+   appropriate triggers. Keep applicable mandatory checks before merge, optional
+   validation explicit, and genuinely post-merge-only work recorded separately as
+   described in [Issue acceptance](#1-start-with-an-issue).
+4. **Reuse work and avoid duplicate execution.** As automation is added, reuse
+   expensive setup such as downloads, fixtures, and build outputs with appropriate
+   cache keys and isolation. Avoid equivalent push/PR runs for the same revision;
+   cancel superseded runs when safe while preserving necessary deployment ordering.
+   Parallelize independent work based on measured resource use, rather than assuming
+   more workers improve feedback time.
+5. **Review coverage and cost together.** For added or expanded checks, identify the
+   additional defect detected, whether existing coverage already supplies that
+   assurance, and the execution and maintenance cost. Watch repeated fresh
+   browser/WebGPU/compiler setup, large fixtures, long rendering loops, and growth
+   from multiplying case combinations.
+6. **Maintain an execution-time budget.** No measured normal-CI baseline or target
+   is recorded here. Establish one from actual evidence during future test/CI
+   performance work, monitor growth, and investigate work exceeding the target.
+   Distinguish elapsed feedback time, total runner/computation time, and queue time.
+   Revisit validation structure and duplication while retaining meaningful assertions
+   and required coverage; this documentation change requires no benchmark or universal
+   time limit.
 
 ## 3. Create a Pull Request for the Issue
 
