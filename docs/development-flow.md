@@ -55,7 +55,8 @@ and the actual tooling available:
   matter, local links and heading anchors, whitespace with `git diff --check`, and
   consistency across the templates, README, AI entry point, and guidance. Use available
   Markdown tooling or describe the manual checks performed. No new runtime tests,
-  browser interaction, GPU/device checks, or deployed-site verification are required.
+  routine manual approval, browser interaction, GPU/physical-device checks,
+  heavyweight-model downloads, or deployment gates are required.
 - For editor behavior changes, choose relevant code checks and, when necessary to
   verify the Issue, exercise the affected behavior using the local server and a
   WebGPU-capable browser. Record the environment and actual results. Human or physical
@@ -116,10 +117,13 @@ Target `main` unless the task specifies another base branch. Use the
 behavior, focused changes, related Issues, and validation actually performed.
 
 Use a concise English commit message describing what changed and why, and reference
-the source Issue. Claim to close an Issue only when the PR fully implements it.
-If implementation is intentionally partial, describe the remaining scope and leave
-the Issue open. Record completed pre-merge validation separately from any required
-post-merge checks, which remain pending until performed.
+the source Issue. Use and preserve `Closes #N` when the PR fully implements the Issue
+and applicable mandatory pre-merge checks are satisfied. If implementation is
+intentionally partial, describe the remaining scope and leave the parent Issue open
+without an automatic closing reference. Pending post-merge-only verification does
+not make an otherwise complete implementation partial. Record completed pre-merge
+validation separately from required post-merge checks, which remain pending until
+performed.
 
 ## 4. Review and revise as needed
 
@@ -136,15 +140,35 @@ fixable code findings; do not repeatedly request code fixes for missing human in
 
 Approve and merge through the authorized workflow when the implementation and
 mandatory pre-merge checks are sufficient and no blocking review findings or necessary
-unanswered human questions remain. Checks possible only after merge do not block
-pre-merge approval when recorded separately.
+unanswered human questions remain. Required repository protections, mandatory
+pre-merge tests, and genuinely necessary pre-merge human acceptance remain blockers
+until satisfied. Checks possible only after merge do not block pre-merge approval
+when recorded separately. After successful merge, close the original Issue, then
+perform any required post-merge verification.
 
 ## 6. Perform required post-merge verification, if any
 
-Perform only the post-merge checks required by the Issue. Keep them pending until
-performed, then report actual results, failures, and follow-up work. Pre-merge evidence
-does not prove deployment or publication succeeded. Templates/documentation-only
-changes ordinarily require no post-merge verification.
+Perform only the post-merge checks genuinely required by the actual change and
+recorded in the Issue. Templates/documentation-only changes ordinarily require none.
+Record evidence in the merged PR, closed Issue, or a linked validation report,
+identifying the checked revision, environment, checks, and actual results. Report
+unperformed, pending, or environment-blocked checks honestly, with reasons; closing
+the Issue does not claim they passed. Pre-merge evidence does not prove deployment
+or publication succeeded, and an unavailable test environment alone is not evidence
+of a product defect.
+
+If verification finds an actual defect, first check for an existing equivalent
+Issue. Link that Issue or create a new one with reproduction steps, affected revision,
+expected and actual behavior, and links to the original Issue and PR. Do not keep
+or reopen the original Issue solely for post-merge follow-up.
+
+This lifecycle supersedes older instructions to keep an implemented Issue open
+solely for post-merge verification; preserve historical test outcomes and evidence
+without rewriting them. In particular, ProjectWeave publication adds `Closes #N`:
+review must not request removing it, keeping the source Issue open, or withholding
+approval solely because post-merge-only verification is pending. Doing so makes
+review and publication undo each other in a Review → Fix → Publish → Review loop.
 
 The flow is Issue → implementation → PR → review → revision as needed → merge,
-followed by post-merge verification only when required.
+close the original Issue → post-merge verification only when required → linked
+follow-up Issue for any discovered defect.
